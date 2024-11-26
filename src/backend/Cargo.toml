@@ -1,0 +1,20 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+mini-redis = "0.4"
+axum = "0.7.9"
+dotenvy = '0.15'
+diesel = { version = "2.2.0", features = ["postgres", "r2d2", "uuid"] }
+diesel_migrations = { version = "2.2.0", features = ["postgres"] }
+tracing = "0.1.40"
+tower-http = { version = "0.6.2", features = ["cors", "trace"] }
+serde = "1.0.215"
+uuid = { version = "1.4", features = ["serde", "v4"] }
+rand = "0.8"
+rayon = "1.10"
