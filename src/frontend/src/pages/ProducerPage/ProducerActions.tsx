@@ -109,11 +109,12 @@ const ProducerActions = ({ producer, onRefreshRateChanged }: ProducerActionsProp
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-8 items-center gap-4">
-            <Label htmlFor="name" className="col-span-3">
+            <Label htmlFor="refreshRate" className="col-span-3">
               Refresh Rate
             </Label>
             <Input
-              id="name"
+              id="refreshRate"
+              data-testId="refreshRate"
               defaultValue={`${existingRefreshRate}`}
               type="number"
               className="col-span-5"

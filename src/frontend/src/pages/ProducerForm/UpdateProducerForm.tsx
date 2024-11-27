@@ -44,7 +44,7 @@ const UpdateProducerForm = () => {
   };
 
   return (
-    <ProducerForm title={'Update Producer' + producer.name} defaultValues={defaultValues} onSubmit={onSubmit}></ProducerForm>
+    <ProducerForm title={'Update Producer ' + producer.name} defaultValues={defaultValues} onSubmit={onSubmit}></ProducerForm>
   );
 };
 

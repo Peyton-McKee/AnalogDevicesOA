@@ -32,6 +32,7 @@ use crate::{
     PoolHandle,
 };
 
+/// Chatgpt helped me with the general architecture of this setup
 /// Multi Producer Single Consumer architecuture for sending out many messages as individual threads, but only updating the database with one to not take up too many databse connnections
 /// # Parameters
 /// - queue: The queue of messages to consume

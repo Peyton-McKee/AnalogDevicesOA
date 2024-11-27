@@ -33,7 +33,8 @@ const ProducerForm = ({ onSubmit, defaultValues, title }: ProducerFormProps) => 
         {title}
       </Typography>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        {/* Tests break if onSubmit not done in this way */}
+        <form onSubmit={form.handleSubmit((args) => onSubmit(args))}>
           <FormField
             control={form.control}
             name={'name'}
