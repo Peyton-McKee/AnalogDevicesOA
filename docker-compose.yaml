@@ -14,18 +14,5 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: sms_manager
 
-  # backend:
-  #   build:
-  #     context: ./src/backend
-  #   container_name: rust_service
-  #   depends_on:
-  #     - database
-  #   environment:
-  #     DATABASE_URL: postgres://admin:password@postgres:5432/sms_manager
-  #   ports:
-  #     - "8080:8080"
-  #   volumes:
-  #     - ./src/backend:/app 
-
 volumes:
   postgres_data:

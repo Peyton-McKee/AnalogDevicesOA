@@ -51,3 +51,5 @@ Uses react-testing-library to assist in UI Tests
 Ensure you've done the above steps
 
 run `npm test`
+
+I used a decent amount of chatgpt to help out with the tests, but overwrote most of what it gave me to be much cleaner
