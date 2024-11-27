@@ -4,7 +4,7 @@ import UpdateProducerForm from '@/pages/ProducerForm/UpdateProducerForm';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { routes } from '../utils/routes';
 import AppContextQuery from './AppContextQuery';
-import { Container, Box, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { PhoneIcon } from 'lucide-react';
 import ProducerPage from '@/pages/ProducerPage/ProducerPage';
 
@@ -30,7 +30,7 @@ function App() {
           </Typography>
         </Box>
       </div>
-      <Container maxWidth={'xl'} sx={{ height: '100vh', marginTop: 1 }}>
+      <Box sx={{ height: '100vh', marginTop: 3, marginX: 5 }}>
         <Routes>
           <Route path={routes.PRODUCERS} Component={ProducersDashboard} />
           <Route path={routes.PRODUCERS_CREATE} Component={CreateProducerForm} />
@@ -38,7 +38,7 @@ function App() {
           <Route path={routes.PRODUCER_BY_ID} Component={ProducerPage} />
           <Route path="*" element={<Navigate to={routes.PRODUCERS} />} />
         </Routes>
-      </Container>
+      </Box>
     </AppContextQuery>
   );
 }

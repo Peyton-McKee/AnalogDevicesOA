@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -25,6 +27,12 @@ impl From<diesel::result::Error> for SMSManagerError {
 impl From<diesel::r2d2::PoolError> for SMSManagerError {
     fn from(error: diesel::r2d2::PoolError) -> Self {
         SMSManagerError::ConnError(error)
+    }
+}
+
+impl Debug for SMSManagerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Error")
     }
 }
 

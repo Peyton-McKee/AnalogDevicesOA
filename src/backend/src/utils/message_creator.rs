@@ -1,4 +1,6 @@
-use crate::diesel::models::{NewMessage, Producer};
+use uuid::Uuid;
+
+use crate::diesel::models::NewMessage;
 
 use super::random_utils::generate_random_string;
 
@@ -6,11 +8,11 @@ use super::random_utils::generate_random_string;
 /// Associates the message with the given producer
 ///
 /// # Parameters
-/// - producer: The producer that is creating the message
-pub fn create_message(producer: &Producer) -> NewMessage {
+/// - producer_id: The id of the producer that is creating the message
+pub fn create_message(producer_id: Uuid) -> NewMessage {
     let body = generate_random_string();
     NewMessage {
         message_body: body,
-        produced_by: producer.id,
+        produced_by: producer_id,
     }
 }

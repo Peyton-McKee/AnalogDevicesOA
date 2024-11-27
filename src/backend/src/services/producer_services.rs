@@ -1,28 +1,26 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::{collections::VecDeque, sync::Arc, time::SystemTime};
+use std::{collections::VecDeque, sync::Arc};
 
-use tokio::sync::{mpsc, Mutex, Notify};
-use tokio::time::{sleep, Duration};
 
 use diesel::{
     dsl::insert_into,
     query_dsl::methods::{FilterDsl, FindDsl},
     BoolExpressionMethods, ExpressionMethods, RunQueryDsl,
 };
+use tokio::sync::Mutex;
 
+use crate::utils::message_utils::{generate_fake_messages, get_producer_info_from_messages};
+use crate::utils::sender::send_messages;
 use crate::{
     diesel::{
         models::{Message, NewProducer, Producer},
         schema::{
-            messages::{dsl::messages, failed, produced_by, sent, time_took},
+            messages::{dsl::messages, produced_by, sent},
             producers::dsl::*,
         },
     },
     transformers::producer_transformer::ProgressData,
     utils::{
         error::SMSManagerError,
-        message_creator::create_message,
-        random_utils::{get_random_wait_time, random_chance},
         uuid::parse_uuid,
     },
     Database, PoolHandle,
@@ -190,30 +188,19 @@ pub async fn get_producer_progress_data(
         .load(db)
         .map_err(SMSManagerError::DbError)?;
 
-    let number_of_messages = found_messages.len();
-
-    let number_of_failed_messages = found_messages.iter().filter(|val| val.failed).count();
-
-    let sent_messages = found_messages
-        .iter()
-        .filter(|val| val.sent && val.time_took.is_some());
-
-    let mut message_times = vec![];
-    let (total_time_for_message, count) = sent_messages.fold((0u32, 0), |(sum, count), item| {
-        message_times.push(item.time_took.unwrap()); // we can unwrap as we checked the value exists in the initial filter
-        (sum + item.time_took.unwrap() as u32, count + 1)
-    });
-
-    let mut average_time_for_message: f64 = 0.0;
-    if count != 0 {
-        average_time_for_message = total_time_for_message as f64 / count as f64
-    }
+    let (
+        number_messages_created,
+        number_messages_failed,
+        message_times,
+        number_messages_sent,
+        average_message_time,
+    ) = get_producer_info_from_messages(found_messages);
 
     Ok(ProgressData {
-        number_messages_created: number_of_messages as i32,
-        number_messages_sent: count,
-        number_messages_failed: number_of_failed_messages as i32,
-        average_message_time: average_time_for_message as i32,
+        number_messages_created,
+        number_messages_sent,
+        number_messages_failed,
+        average_message_time,
         message_times,
     })
 }
@@ -233,14 +220,7 @@ pub async fn generate_messages(
 ) -> Result<i32, SMSManagerError> {
     let producer = get_producer_by_id(db, producer_id).await?;
 
-    let mut message_array =
-        Vec::with_capacity(producer.number_messages.try_into().map_err(|_err| {
-            SMSManagerError::InvalidEncoding("Could not initialize message array".to_string())
-        })?);
-
-    for _ in 0..producer.number_messages {
-        message_array.push(create_message(&producer));
-    }
+    let message_array = generate_fake_messages(producer.number_messages, producer.id)?;
 
     println!("Inserting messages: {}", message_array.len());
 
@@ -279,11 +259,10 @@ pub async fn activate_producer(
     pool: Arc<PoolHandle>,
     producer_id: String,
 ) -> Result<String, SMSManagerError> {
-    let mut first_connection = pool.get()?;
-
     let producer_uuid = parse_uuid(&producer_id)?;
+    let mut db = pool.get()?;
 
-    let producer = get_producer_by_id(&mut first_connection, producer_id).await?;
+    let producer = get_producer_by_id(&mut db, producer_id).await?;
 
     if producer.status == "SENDING" {
         return Err(SMSManagerError::GeneralException(
@@ -293,7 +272,7 @@ pub async fn activate_producer(
 
     let found_messages: Vec<Message> = messages
         .filter(produced_by.eq(producer_uuid).and(sent.eq(false)))
-        .load(&mut first_connection)
+        .load(&mut db)
         .map_err(SMSManagerError::DbError)?;
 
     let queue = Arc::new(Mutex::new(VecDeque::from(found_messages)));
@@ -314,102 +293,14 @@ pub async fn activate_producer(
 
     diesel::update(producers.find(producer_uuid))
         .set(status.eq("SENDING"))
-        .execute(&mut first_connection)
+        .execute(&mut db)
         .map_err(SMSManagerError::DbError)?;
 
-    let mut handles = vec![];
-
-    let (tx, mut rx) = mpsc::channel::<Message>(100);
-    let active_threads = Arc::new(AtomicUsize::new(num_threads.try_into().unwrap())); // Verified it is positive integer earlier
-    let notify = Arc::new(Notify::new());
-
-    // Spawn the threads and process the queue
-    for _ in 0..num_threads {
-        let queue = Arc::clone(&queue);
-        let producer = producer.clone();
-        let tx = tx.clone(); // Clone the sender for each thread
-        let active_threads = Arc::clone(&active_threads);
-        let notify = Arc::clone(&notify);
-
-        let handle = tokio::spawn(async move {
-            while let Some(item) = {
-                let mut q = queue.lock().await;
-                q.pop_front()
-            } {
-                println!("Processing item: {}", item.id);
-
-                let begin_time = SystemTime::now();
-
-                let wait_time = get_random_wait_time(&producer.average_send_delay);
-
-                // Non-blocking async sleep
-                sleep(Duration::from_secs(wait_time)).await;
-
-                let time = SystemTime::now()
-                    .duration_since(begin_time)
-                    .unwrap()
-                    .as_secs() as i32;
-
-                let did_fail = random_chance(producer.failure_rate);
-
-                let updated_message = Message {
-                    id: item.id,
-                    sent: true,
-                    time_took: Some(time),
-                    failed: did_fail,
-                    message_body: item.message_body,
-                    produced_by: item.produced_by,
-                };
-
-                if tx.send(updated_message).await.is_err() {
-                    eprintln!("Failed to send message to the updater queue.");
-                }
-            }
-
-            if active_threads.fetch_sub(1, Ordering::SeqCst) == 1 {
-                notify.notify_one();
-            }
-        });
-
-        handles.push(handle);
-    } // I used chatgpt to assist me in setting up the mpsc structure
-
-    let db_updater_handle = tokio::spawn(async move {
-        while let Some(message) = rx.recv().await {
-            let mut thread_connection = pool.get().unwrap();
-
-            // Update the message in the database
-            match diesel::update(messages.find(message.id))
-                .set((
-                    sent.eq(message.sent),
-                    time_took.eq(message.time_took),
-                    failed.eq(message.failed),
-                ))
-                .execute(&mut thread_connection)
-            {
-                Ok(_) => println!("Updated message {} in the database.", message.id),
-                Err(err) => eprintln!("Failed to update message {}: {}", message.id, err),
-            }
-
-            let _ = diesel::update(producers.find(producer_uuid))
-                .set(status.eq("SENDING"))
-                .execute(&mut thread_connection)
-                .map_err(SMSManagerError::DbError);
-        }
-
-        println!("Database updater thread finished. Queue is empty.");
-    });
-    handles.push(db_updater_handle);
-
-    for handle in handles {
-        handle.await.unwrap();
-    }
-
-    notify.notified().await;
+    send_messages(queue, pool, &producer, num_threads).await;
 
     diesel::update(producers.find(producer_uuid))
         .set(status.eq("EMPTY"))
-        .execute(&mut first_connection)
+        .execute(&mut db)
         .map_err(SMSManagerError::DbError)?;
 
     Ok("All items processed.".to_string())

@@ -26,7 +26,7 @@ pub fn generate_random_string() -> String {
 }
 
 /// Gets a random wait time that is between 0 and 5 values away from the given average
-///
+/// 
 /// # Parameters
 /// - average: The average to base the time around
 pub fn get_random_wait_time(average: &i32) -> u64 {

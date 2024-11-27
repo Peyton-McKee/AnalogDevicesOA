@@ -20,6 +20,16 @@ pub struct Message {
 
 #[derive(Insertable)]
 #[diesel(table_name = messages)]
+pub struct NewMessageFull {
+    pub message_body: String,
+    pub produced_by: Uuid,
+    pub sent: bool,
+    pub failed: bool,
+    pub time_took: Option<i32>,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = messages)]
 pub struct NewMessage {
     pub message_body: String,
     pub produced_by: Uuid,
