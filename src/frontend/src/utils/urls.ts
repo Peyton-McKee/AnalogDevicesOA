@@ -9,6 +9,7 @@ const UPDATE_PRODUCER = (id: string) => `${PRODUCER_BY_ID(id)}/update`;
 const ACTIVATE_PRODUCER = (id: string) => `${PRODUCER_BY_ID(id)}/send`;
 const GENERATE_MESSAGES = (id: string) => `${PRODUCER_BY_ID(id)}/generate`;
 const PRODUCER_PROGRESS = (id: string) => `${PRODUCER_BY_ID(id)}/progress`;
+const DELETE_PRODUCER = (id: string) => `${PRODUCER_BY_ID(id)}/delete`;
 
 export default {
   PRODUCERS,
@@ -18,5 +19,6 @@ export default {
   UPDATE_PRODUCER,
   ACTIVATE_PRODUCER,
   GENERATE_MESSAGES,
-  PRODUCER_PROGRESS
+  PRODUCER_PROGRESS,
+  DELETE_PRODUCER
 };

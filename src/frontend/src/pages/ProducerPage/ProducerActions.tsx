@@ -11,11 +11,13 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useActivateProducer, useGenerateMessages } from '@/hooks/producer.hooks';
+import { useActivateProducer, useDeleteProducer, useGenerateMessages } from '@/hooks/producer.hooks';
 import { useToast } from '@/hooks/use-toast';
+import { routes } from '@/utils/routes';
 import { Producer } from '@/utils/types';
 import { DialogClose } from '@radix-ui/react-dialog';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface ProducerActionsProps {
   producer: Producer;
@@ -25,10 +27,13 @@ interface ProducerActionsProps {
 const ProducerActions = ({ producer, onRefreshRateChanged }: ProducerActionsProps) => {
   const { mutateAsync: generateMessages } = useGenerateMessages(producer.id);
   const { mutateAsync: activateProducer } = useActivateProducer(producer.id);
+  const { mutateAsync: deleteProducer } = useDeleteProducer(producer.id);
+
   const [refreshRate, setRefreshRate] = useState(5);
   const existingRefreshRate = parseFloat(localStorage.getItem('refreshRate') ?? '5');
 
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const onGenerateMessagesClicked = async () => {
     try {
@@ -62,6 +67,27 @@ const ProducerActions = ({ producer, onRefreshRateChanged }: ProducerActionsProp
     }
   };
 
+  const onDeleteProducerClicked = async () => {
+    try {
+      await deleteProducer();
+      toast({
+        title: 'Successfully deleted producer'
+      });
+      navigate(routes.PRODUCERS);
+    } catch (error) {
+      if (error instanceof Error) {
+        toast({
+          title: 'Failed to delete prodcuer',
+          description: error.message
+        });
+      }
+    }
+  };
+
+  const onEditProducerClicked = () => {
+    navigate(`/producers/${producer.id}/update`);
+  };
+
   return (
     <Dialog>
       <DropdownMenu>
@@ -69,6 +95,8 @@ const ProducerActions = ({ producer, onRefreshRateChanged }: ProducerActionsProp
         <DropdownMenuContent>
           <DropdownMenuItem onClick={onGenerateMessagesClicked}>Generate Messages</DropdownMenuItem>
           <DropdownMenuItem onClick={onActivateProducerClicked}>Send Messages</DropdownMenuItem>
+          <DropdownMenuItem onClick={onEditProducerClicked}>Edit Producer</DropdownMenuItem>
+          <DropdownMenuItem onClick={onDeleteProducerClicked}>Delete Producer</DropdownMenuItem>
           <DialogTrigger asChild>
             <DropdownMenuItem>Set Refresh Rate</DropdownMenuItem>
           </DialogTrigger>

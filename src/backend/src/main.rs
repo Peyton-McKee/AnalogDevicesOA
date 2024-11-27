@@ -2,10 +2,12 @@ use axum::{
     http::{header::CONTENT_TYPE, HeaderValue, Method},
     Router,
 };
-use backend::{routes::producer_routes::get_producer_router, PoolHandle};
+use backend::{
+    diesel::schema::producers::dsl::*, routes::producer_routes::get_producer_router, PoolHandle,
+};
 use diesel::{
     r2d2::{ConnectionManager, Pool},
-    PgConnection,
+    ExpressionMethods, PgConnection, RunQueryDsl,
 };
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use dotenvy::dotenv;
@@ -26,6 +28,10 @@ async fn main() {
     conn.run_pending_migrations(MIGRATIONS)
         .expect("Could not run migrations!");
     println!("Successfully migrated DB!");
+
+    let _ = diesel::update(producers)
+        .set(status.eq("INACTIVE"))
+        .execute(&mut conn);
 
     let app = Router::new()
         .nest("/producers", get_producer_router())

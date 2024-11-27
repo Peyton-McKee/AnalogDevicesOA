@@ -4,8 +4,8 @@ use axum::{
 };
 
 use crate::controllers::producer_controllers::{
-    activate_producer, create_producer, generate_messages, get_all_producers, get_producer_by_id,
-    get_producer_progress_data, update_producer,
+    activate_producer, create_producer, delete_producer, generate_messages, get_all_producers,
+    get_producer_by_id, get_producer_progress_data, update_producer,
 };
 
 pub fn get_producer_router(
@@ -18,4 +18,5 @@ pub fn get_producer_router(
         .route("/:id/generate", post(generate_messages))
         .route("/:id/send", post(activate_producer))
         .route("/:id/progress", get(get_producer_progress_data))
+        .route("/:id/delete", post(delete_producer))
 }

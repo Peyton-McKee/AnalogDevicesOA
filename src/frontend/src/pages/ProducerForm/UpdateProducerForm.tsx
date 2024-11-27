@@ -25,7 +25,7 @@ const UpdateProducerForm = () => {
     name: producer.name,
     number_messages: producer.number_messages,
     average_send_delay: producer.average_send_delay,
-    num_senders: producer.num_senders,
+    num_senders: producer.num_senders ?? undefined,
     failure_rate: producer.failure_rate
   };
 

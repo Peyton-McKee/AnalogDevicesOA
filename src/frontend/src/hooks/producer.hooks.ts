@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   activateProducer,
   createProducer,
+  deleteProducer,
   generateMessages,
   getAllProducers,
   getProducerById,
@@ -117,6 +118,23 @@ export const useGetProducerProgress = (id: string) => {
     queryKey: ['producers', 'progress', id],
     queryFn: async () => {
       return await getProducerProgress(id);
+    }
+  });
+};
+
+/**
+ * 
+ * @param id 
+ * @returns 
+ */
+export const useDeleteProducer = (id: string) => {
+  const queryClient = useQueryClient();
+  return useMutation<string, Error>({
+    mutationFn: async () => {
+      return await deleteProducer(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['producers'] });
     }
   });
 };

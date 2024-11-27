@@ -73,3 +73,12 @@ export const updateProducer = async (id: string, payload: ProducerArgs) => {
 export const getProducerProgress = async (id: string) => {
   return await analogFetch<ProgressData>(urls.PRODUCER_PROGRESS(id));
 };
+
+/**
+ * 
+ * @param id 
+ * @returns 
+ */
+export const deleteProducer = async (id: string) => {
+  return await analogFetch<string>(urls.DELETE_PRODUCER(id), { method: 'POST' });
+};
