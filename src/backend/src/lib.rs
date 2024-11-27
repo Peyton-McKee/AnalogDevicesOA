@@ -5,6 +5,7 @@ pub mod diesel;
 pub mod services;
 pub mod transformers;
 pub mod utils;
+pub mod routes;
 
 /// The type descriptor of the database passed to the middlelayer through axum state
 pub type Database = PgConnection;

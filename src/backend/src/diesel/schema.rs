@@ -1,7 +1,7 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    message (id) {
+    messages (id) {
         id -> Uuid,
         message_body -> Text,
         sent -> Bool,
@@ -12,19 +12,20 @@ diesel::table! {
 }
 
 diesel::table! {
-    producer (id) {
+    producers (id) {
         id -> Uuid,
         name -> Text,
         number_messages -> Int4,
         average_send_delay -> Int4,
         failure_rate -> Int4,
         num_senders -> Nullable<Int4>,
+        status -> Text,
     }
 }
 
-diesel::joinable!(message -> producer (produced_by));
+diesel::joinable!(messages -> producers (produced_by));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    message,
-    producer,
+    messages,
+    producers,
 );

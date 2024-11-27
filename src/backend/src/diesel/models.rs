@@ -6,7 +6,7 @@
 use diesel::{prelude::*, sql_types::Bool};
 use uuid::Uuid;
 
-use super::schema::{message, producer};
+use super::schema::{messages, producers};
 
 #[derive(Queryable, Debug)]
 pub struct Message {
@@ -19,14 +19,14 @@ pub struct Message {
 }
 
 #[derive(Insertable)]
-#[diesel(table_name = message)]
+#[diesel(table_name = messages)]
 pub struct NewMessage {
     pub message_body: String,
     pub produced_by: Uuid,
 }
 
 #[derive(Queryable, Identifiable, AsChangeset, Debug)]
-#[diesel(table_name = producer)]
+#[diesel(table_name = producers)]
 pub struct Producer {
     pub id: Uuid,
     pub name: String,
@@ -34,6 +34,7 @@ pub struct Producer {
     pub average_send_delay: i32,
     pub failure_rate: i32,
     pub num_senders: Option<i32>,
+    pub status: String,
 }
 
 impl Clone for Producer {
@@ -45,16 +46,18 @@ impl Clone for Producer {
             failure_rate: self.failure_rate,
             number_messages: self.number_messages,
             average_send_delay: self.average_send_delay,
+            status: self.status.to_string(),
         }
     }
 }
 
 #[derive(Insertable, AsChangeset, Debug)]
-#[diesel(table_name = producer)]
+#[diesel(table_name = producers)]
 pub struct NewProducer {
     pub name: String,
     pub number_messages: i32,
     pub average_send_delay: i32,
     pub failure_rate: i32,
     pub num_senders: Option<i32>,
+    pub status: String,
 }

@@ -2,7 +2,6 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
-use tracing::warn;
 
 pub enum SMSManagerError {
     /// Deseil error
@@ -43,7 +42,7 @@ impl IntoResponse for SMSManagerError {
             ),
             SMSManagerError::InvalidEncoding(reason) => (StatusCode::UNPROCESSABLE_ENTITY, reason),
             SMSManagerError::GeneralException(error) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, format!("{}", error))
+                (StatusCode::INTERNAL_SERVER_ERROR, error.to_string())
             }
             SMSManagerError::EmptyResult => (
                 StatusCode::NOT_FOUND,
@@ -51,7 +50,7 @@ impl IntoResponse for SMSManagerError {
             ),
         };
 
-        warn!("Routing error: {}: {}", status, reason);
+        println!("Routing error: {}: {}", status, reason);
 
         (status, reason).into_response()
     }

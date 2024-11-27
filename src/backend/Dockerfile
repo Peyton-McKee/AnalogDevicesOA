@@ -1,17 +1,12 @@
-FROM rust:alpine
-WORKDIR /myapp
+FROM rust:latest AS builder
 
-RUN apk add --no-cache musl-dev
+WORKDIR /usr/src/myapp
 
-RUN --mount=type=bind,source=src,target=src \
-    --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
-    --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
-    --mount=type=cache,target=/app/target/ \
-    --mount=type=cache,target=/usr/local/cargo/registry/ \
-    <<EOF
-set -e
-cargo build --locked --release
-EOF
+COPY . . 
+RUN cargo install --path . --locked --profile release
 
-CMD ["/backend/target/release/backend"]
-EXPOSE 3000
+FROM debian:stable-slim
+COPY --from=builder /usr/local/cargo/bin/scylla-server /usr/local/bin/scylla-server
+RUN apt-get update && apt install -y openssl && apt clean && rm -rf /var/lib/apt/lists/*
+
+ENTRYPOINT ["/usr/local/bin/scylla-server"]

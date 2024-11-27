@@ -7,8 +7,10 @@ use axum::{
 use serde::Deserialize;
 
 use crate::{
-    services::producer_services, transformers::producer_transformer::PublicProducer,
-    utils::error::SMSManagerError, PoolHandle,
+    services::producer_services,
+    transformers::producer_transformer::{ProgressData, PublicProducer},
+    utils::error::SMSManagerError,
+    PoolHandle,
 };
 
 #[derive(Deserialize)]
@@ -107,4 +109,17 @@ pub async fn activate_producer(
     let success_message = producer_services::activate_producer(Arc::new(pool), producer_id).await?;
 
     Ok(Json::from(success_message))
+}
+
+pub async fn get_producer_progress_data(
+    State(pool): State<PoolHandle>,
+    Path(producer_id): Path<String>,
+) -> Result<Json<ProgressData>, SMSManagerError> {
+    
+    let mut db: diesel::r2d2::PooledConnection<
+        diesel::r2d2::ConnectionManager<diesel::PgConnection>,
+    > = pool.get()?;
+    let progress_data = producer_services::get_producer_progress_data(&mut db, producer_id).await?;
+
+    Ok(Json::from(progress_data))
 }

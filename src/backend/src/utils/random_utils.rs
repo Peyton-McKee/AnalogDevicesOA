@@ -1,17 +1,16 @@
 use rand::{distributions::Alphanumeric, Rng};
-use tracing::info;
 
 /**
  *
  */
 pub fn random_chance(mut percentage: i32) -> bool {
-    if percentage < 0 || percentage > 100 {
-        info!("Percentage out of bounds, setting to 50");
+    if !(0..=100).contains(&percentage) {
+        println!("Percentage out of bounds, setting to 50");
         percentage = 50;
     }
 
     let mut rng = rand::thread_rng();
-    rng.gen_range(0..100) > percentage
+    rng.gen_range(0..100) < percentage
 }
 
 /**
@@ -30,7 +29,7 @@ pub fn generate_random_string() -> String {
  *
  */
 pub fn get_random_wait_time(average: &i32) -> u64 {
-    let random_change = rand::thread_rng().gen_range(0..=100);
+    let random_change = rand::thread_rng().gen_range(0..=5);
     let random_sign = rand::thread_rng().gen_range(-1..=1);
     let mut wait_time = average + (random_sign * random_change);
     if wait_time < 0 {
